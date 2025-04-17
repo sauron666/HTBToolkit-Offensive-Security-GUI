@@ -7,3 +7,6 @@ ttkthemes==3.2.2
 python-docx==0.8.11
 Pillow==10.1.0
 pycryptodome==3.19.1
+python-docx>=0.8.11
+openpyxl>=3.0.10
+lxml>=4.9.1
