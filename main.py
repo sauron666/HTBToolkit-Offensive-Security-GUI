@@ -433,17 +433,164 @@ class HTBToolkitApp:
             insertbackground='white'
         )
         self.redteam_output.pack(pady=10, padx=10, fill='both', expand=True)
+    # Добавяне на новите табове
+    def create_office_tab(self):
+        """Create Office payload tab"""
+        self.office_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.office_tab, text="Office Payloads")
+        
+        # Document type
+        ttk.Label(self.office_tab, text="Document Type:").pack(pady=5)
+        self.office_type = ttk.Combobox(
+            self.office_tab,
+            values=["Word Macro (DOCM)", "Excel Macro (XLSM)", "HTA Application"],
+            state="readonly"
+        )
+        self.office_type.current(0)
+        self.office_type.pack(pady=5)
+        
+        # Payload input
+        ttk.Label(self.office_tab, text="Payload Code:").pack(pady=5)
+        self.office_payload = scrolledtext.ScrolledText(
+            self.office_tab,
+            width=80,
+            height=10,
+            bg='#2e2e2e',
+            fg='white'
+        )
+        self.office_payload.pack(pady=5)
+        self.office_payload.insert(tk.END, 
+            "Sub AutoOpen()\n    MsgBox \"Document loaded\", vbInformation\nEnd Sub")
+        
+        # Generate button
+        ttk.Button(self.office_tab,
+                  text="Generate Document",
+                  command=self.generate_office_payload).pack(pady=10)
+        
+        # Output
+        self.office_output = scrolledtext.ScrolledText(
+            self.office_tab,
+            width=80,
+            height=10,
+            bg='#2e2e2e',
+            fg='white'
+        )
+        self.office_output.pack(pady=10)
     
-    # ... (additional methods for functionality would go here)
-    def execute_shell_command(self):
-        """Execute shell command and display output"""
-        cmd = self.shell_cmd.get()
-        if not cmd:
-            messagebox.showerror("Error", "Please enter a command")
+    def create_obfuscation_tab(self):
+        """Create code obfuscation tab"""
+        self.obfuscate_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.obfuscate_tab, text="Code Obfuscation")
+        
+        # Language selection
+        ttk.Label(self.obfuscate_tab, text="Language:").pack(pady=5)
+        self.obfuscate_lang = ttk.Combobox(
+            self.obfuscate_tab,
+            values=["powershell", "vba", "bash"],
+            state="readonly"
+        )
+        self.obfuscate_lang.current(0)
+        self.obfuscate_lang.pack(pady=5)
+        
+        # Code input
+        ttk.Label(self.obfuscate_tab, text="Original Code:").pack(pady=5)
+        self.obfuscate_input = scrolledtext.ScrolledText(
+            self.obfuscate_tab,
+            width=80,
+            height=10,
+            bg='#2e2e2e',
+            fg='white'
+        )
+        self.obfuscate_input.pack(pady=5)
+        
+        # Obfuscate button
+        ttk.Button(self.obfuscate_tab,
+                  text="Obfuscate Code",
+                  command=self.obfuscate_code).pack(pady=10)
+        
+        # Output
+        self.obfuscate_output = scrolledtext.ScrolledText(
+            self.obfuscate_tab,
+            width=80,
+            height=10,
+            bg='#2e2e2e',
+            fg='white'
+        )
+        self.obfuscate_output.pack(pady=10)
+    
+    # Добавяне на методи за обработка
+    def generate_office_payload(self):
+        """Generate Office payload document"""
+        doc_type = self.office_type.get()
+        payload = self.office_payload.get("1.0", tk.END).strip()
+        
+        if not payload:
+            messagebox.showerror("Error", "Please enter payload code")
             return
-
-        self.status.set("Executing command...")
-        self.shell_output.insert(tk.END, f"$ {cmd}\n")
+        
+        output_file = filedialog.asksaveasfilename(
+            defaultextension=".docm" if "Word" in doc_type else ".xlsm" if "Excel" in doc_type else ".hta",
+            filetypes=[
+                ("Word Macro-Enabled", "*.docm"),
+                ("Excel Macro-Enabled", "*.xlsm"),
+                ("HTA Application", "*.hta")
+            ]
+        )
+        
+        if not output_file:
+            return
+        
+        if "Word" in doc_type:
+            # For demo purposes - in real implementation use template file
+            result = OfficePayload.inject_macro_into_docx(
+                "template.docx",  # Should be provided
+                output_file,
+                payload
+            )
+        elif "Excel" in doc_type:
+            result = OfficePayload.generate_evil_excel_macro(
+                output_file,
+                payload
+            )
+        else:  # HTA
+            result = OfficePayload.generate_hta_payload(
+                payload,
+                output_file
+            )
+        
+        self.office_output.delete("1.0", tk.END)
+        self.office_output.insert(tk.END, result)
+    
+    def obfuscate_code(self):
+        """Obfuscate input code"""
+        lang = self.obfuscate_lang.get()
+        code = self.obfuscate_input.get("1.0", tk.END).strip()
+        
+        if not code:
+            messagebox.showerror("Error", "Please enter code to obfuscate")
+            return
+        
+        obfuscators = CodeObfuscator.get_obfuscators()
+        if lang not in obfuscators:
+            messagebox.showerror("Error", f"No obfuscator for {lang}")
+            return
+        
+        try:
+            obfuscated = obfuscators[lang](code)
+            self.obfuscate_output.delete("1.0", tk.END)
+            self.obfuscate_output.insert(tk.END, obfuscated)
+        except Exception as e:
+            messagebox.showerror("Error", f"Obfuscation failed: {str(e)}")
+        # ... (additional methods for functionality would go here)
+        def execute_shell_command(self):
+            """Execute shell command and display output"""
+            cmd = self.shell_cmd.get()
+            if not cmd:
+                messagebox.showerror("Error", "Please enter a command")
+                return
+    
+            self.status.set("Executing command...")
+            self.shell_output.insert(tk.END, f"$ {cmd}\n")
     
     def run_command():
         result = ShellTools.run_command(cmd)
